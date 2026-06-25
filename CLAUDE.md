@@ -6,7 +6,7 @@ A career-guidance web app where users have a conversation with an AI to work thr
 
 - `server.js` — Express server, API routes, Anthropic client
 - `public/index.html` — UI, all styles inline
-- `public/app.js` — frontend logic, conversation history, fetch calls
+- `public/app.js` — frontend logic, conversation history, fetch calls, localStorage persistence
 
 ## Stack
 
@@ -29,3 +29,4 @@ Hosted on Render. Auto-deploys when commits are pushed to `main` on GitHub. To s
 - Keep code and responses clean and simple. No unnecessary abstractions.
 - Test locally with `node server.js` (runs on port 3000) before pushing.
 - The two API routes are `/api/chat` (conversation) and `/api/reflect` (pattern summary). Keep them separate.
+- Conversation history is persisted in `localStorage` under the key `career_chat_history`. It's saved after each AI reply and restored on page load. "Start over" clears it. No server or database involved.
