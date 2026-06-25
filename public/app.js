@@ -7,6 +7,15 @@ const reflectBtn = document.getElementById('reflect-btn');
 const promptsEl = document.getElementById('prompts');
 
 const history = [];
+const STORAGE_KEY = 'career_chat_history';
+
+function saveHistory() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+}
+
+function clearHistory() {
+  localStorage.removeItem(STORAGE_KEY);
+}
 
 function addMessage(role, text) {
   const div = document.createElement('div');
@@ -52,6 +61,7 @@ async function handleSend() {
     } else {
       addMessage('assistant', data.content);
       history.push({ role: 'assistant', content: data.content });
+      saveHistory();
     }
   } catch {
     hideTyping();
@@ -101,6 +111,7 @@ async function handleReflect() {
 
 restartBtn.addEventListener('click', () => {
   history.length = 0;
+  clearHistory();
   messagesEl.querySelectorAll('.message, .reflection-card').forEach(m => m.remove());
   hideTyping();
   restartBtn.classList.remove('visible');
@@ -111,6 +122,24 @@ restartBtn.addEventListener('click', () => {
 });
 
 reflectBtn.addEventListener('click', handleReflect);
+
+(function restoreSession() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return;
+
+  let parsed;
+  try { parsed = JSON.parse(saved); } catch { return; }
+  if (!Array.isArray(parsed) || parsed.length === 0) return;
+
+  parsed.forEach(msg => {
+    history.push(msg);
+    addMessage(msg.role, msg.content);
+  });
+
+  promptsEl.style.display = 'none';
+  restartBtn.classList.add('visible');
+  if (history.length >= 4) reflectBtn.classList.add('visible');
+})();
 
 sendBtn.addEventListener('click', handleSend);
 
