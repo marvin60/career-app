@@ -208,6 +208,57 @@
       display: block;
     }
 
+    #reflect-btn {
+      display: none;
+      align-self: center;
+      background: #fff;
+      border: 1.5px solid #ddd8ff;
+      border-radius: 999px;
+      color: #5a50d6;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 0.5rem 1.2rem;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      box-shadow: 0 1px 4px rgba(124, 111, 247, 0.08);
+    }
+
+    #reflect-btn:hover {
+      background: #f0eeff;
+      border-color: #7c6ff7;
+    }
+
+    #reflect-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #reflect-btn.visible {
+      display: block;
+    }
+
+    .reflection-card {
+      background: #faf9ff;
+      border: 1.5px solid #ddd8ff;
+      border-radius: 16px;
+      padding: 1.1rem 1.3rem;
+      line-height: 1.65;
+      font-size: 0.92rem;
+      color: #2a2a4a;
+      align-self: stretch;
+      box-shadow: 0 2px 8px rgba(124, 111, 247, 0.07);
+      animation: fadeUp 0.25s ease;
+    }
+
+    .reflection-card .reflection-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #9990e8;
+      margin-bottom: 0.55rem;
+    }
+
     @media (max-width: 480px) {
       body {
         padding: 1.5rem 0.75rem 1rem;
@@ -290,6 +341,7 @@
         <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
     </div>
+    <button id="reflect-btn">Show me what you've noticed</button>
     <button id="restart-btn">↺ Start over</button>
   </div>
 

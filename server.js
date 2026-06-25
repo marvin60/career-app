@@ -50,6 +50,45 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+const REFLECT_PROMPT = `You are reading a conversation between a person and a career guide. Your job is to write a short, honest reflection of the patterns you noticed — like a sharp friend who paid close attention.
+
+RULES:
+- 3–5 sentences max. No more.
+- Be specific, not generic. Name what you actually saw in this conversation.
+- No flattery. No "you're so self-aware." Say what's real.
+- Point out what they seem drawn to AND what seems to be holding them back.
+- If they dodged something, name it. If they kept circling the same thing, name it.
+- Write in second person ("you"). Plain sentences. No bullet points, no markdown.
+- This should feel like what a perceptive friend would say, not a therapist's report.`;
+
+app.post('/api/reflect', async (req, res) => {
+  const { messages } = req.body;
+
+  if (!messages || !Array.isArray(messages) || messages.length < 2) {
+    return res.status(400).json({ error: 'messages array required' });
+  }
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      system: REFLECT_PROMPT,
+      messages: [
+        {
+          role: 'user',
+          content: 'Based on the conversation below, write your honest reflection of the patterns you noticed.\n\n' +
+            messages.map(m => `${m.role === 'user' ? 'Person' : 'Guide'}: ${m.content}`).join('\n'),
+        },
+      ],
+    });
+
+    res.json({ content: response.content[0].text });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: 'Failed to generate reflection.' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Running at http://localhost:${PORT}`);
