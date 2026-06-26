@@ -25,6 +25,44 @@ function addMessage(role, text) {
   div.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
+function delay(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function splitIntoBubbles(text) {
+  if (text.length <= 200) return [text];
+
+  const paras = text.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+  if (paras.length >= 2) {
+    return paras.length <= 3 ? paras : mergeInto(paras, 3);
+  }
+
+  const sentences = text.replace(/([.!?])\s+/g, '$1\x00').split('\x00').filter(Boolean);
+  if (sentences.length < 3) return [text];
+  return mergeInto(sentences, 3);
+}
+
+function mergeInto(parts, n) {
+  const result = [];
+  const size = Math.ceil(parts.length / n);
+  for (let i = 0; i < n; i++) {
+    const chunk = parts.slice(i * size, (i + 1) * size).join(' ').trim();
+    if (chunk) result.push(chunk);
+  }
+  return result;
+}
+
+async function showBubbles(bubbles) {
+  addMessage('assistant', bubbles[0]);
+  for (let i = 1; i < bubbles.length; i++) {
+    await delay(300);
+    showTyping();
+    await delay(700);
+    hideTyping();
+    addMessage('assistant', bubbles[i]);
+  }
+}
+
 function showTyping() {
   typingEl.classList.add('visible');
   typingEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -59,7 +97,7 @@ async function handleSend() {
     if (data.error) {
       addMessage('assistant', 'Error: ' + data.error);
     } else {
-      addMessage('assistant', data.content);
+      await showBubbles(splitIntoBubbles(data.content));
       history.push({ role: 'assistant', content: data.content });
       saveHistory();
     }
