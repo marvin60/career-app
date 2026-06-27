@@ -312,12 +312,48 @@
       stroke-linecap: round;
       stroke-linejoin: round;
     }
+
+    #user-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 0.75rem;
+      justify-content: center;
+    }
+
+    #user-photo {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: none;
+    }
+
+    #user-name {
+      font-size: 0.85rem;
+      color: #6b6b8a;
+    }
+
+    #signout-link {
+      font-size: 0.8rem;
+      color: #a0a0bf;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    #signout-link:hover {
+      color: #5a50d6;
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>What are you figuring out?</h1>
     <p>Describe what you're stuck on and we'll work through it together.</p>
+    <div id="user-bar">
+      <img id="user-photo" src="" alt="" />
+      <span id="user-name"></span>
+      <a id="signout-link" href="/auth/logout">Sign out</a>
+    </div>
   </header>
 
   <div id="chat-container">

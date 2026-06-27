@@ -6,6 +6,19 @@ const restartBtn = document.getElementById('restart-btn');
 const reflectBtn = document.getElementById('reflect-btn');
 const promptsEl = document.getElementById('prompts');
 
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me');
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    const user = await res.json();
+    document.getElementById('user-name').textContent = user.name;
+    const photo = document.getElementById('user-photo');
+    if (user.photo) { photo.src = user.photo; photo.style.display = 'block'; }
+  } catch {
+    window.location.href = '/login';
+  }
+})();
+
 const history = [];
 const STORAGE_KEY = 'career_chat_history';
 

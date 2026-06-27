@@ -1,10 +1,44 @@
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
+const passport = require('passport');
+const { Strategy: GoogleStrategy } = require('passport-google-oauth20');
 const Anthropic = require('@anthropic-ai/sdk');
 const path = require('path');
 
 const app = express();
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+app.set('trust proxy', 1);
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: !!process.env.BASE_URL,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  },
+}));
+
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: `${process.env.BASE_URL || 'http://localhost:3000'}/auth/google/callback`,
+}, (accessToken, refreshToken, profile, done) => {
+  done(null, {
+    id: profile.id,
+    name: profile.displayName,
+    email: profile.emails[0]?.value,
+    photo: profile.photos[0]?.value,
+  });
+}));
+
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => done(null, user));
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 const SYSTEM_PROMPT = `CRITICAL FORMAT RULES (follow these above all else):
 - Every response must be under 4 sentences. Short. Like texting.
@@ -28,7 +62,36 @@ Write in plain text only. Never use asterisks, markdown, bold, or italics — ju
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.post('/api/chat', async (req, res) => {
+app.get('/login', (req, res) => {
+  if (req.isAuthenticated()) return res.redirect('/');
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+app.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => res.redirect('/')
+);
+
+app.get('/auth/logout', (req, res, next) => {
+  req.logout(err => {
+    if (err) return next(err);
+    res.redirect('/login');
+  });
+});
+
+app.get('/api/me', (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
+  res.json({ name: req.user.name, email: req.user.email, photo: req.user.photo });
+});
+
+function requireAuth(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  res.status(401).json({ error: 'Not authenticated' });
+}
+
+app.post('/api/chat', requireAuth, async (req, res) => {
   const { messages } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
@@ -61,7 +124,7 @@ RULES:
 - Write in second person ("you"). Plain sentences. No bullet points, no markdown.
 - This should feel like what a perceptive friend would say, not a therapist's report.`;
 
-app.post('/api/reflect', async (req, res) => {
+app.post('/api/reflect', requireAuth, async (req, res) => {
   const { messages } = req.body;
 
   if (!messages || !Array.isArray(messages) || messages.length < 2) {
