@@ -104,8 +104,15 @@ async function handleSend() {
       body: JSON.stringify({ messages: history }),
     });
 
-    const data = await res.json();
     hideTyping();
+
+    if (res.status === 429) {
+      addMessage('assistant', "You've reached today's limit of 25 messages. Come back tomorrow to keep the conversation going.");
+      history.pop(); // don't count this message in history
+      return;
+    }
+
+    const data = await res.json();
 
     if (data.error) {
       addMessage('assistant', 'Error: ' + data.error);

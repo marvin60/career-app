@@ -41,10 +41,11 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const SYSTEM_PROMPT = `CRITICAL FORMAT RULES (follow these above all else):
-- Every response must be under 4 sentences. Short. Like texting.
+- Every response must be 1-2 sentences max. Like a quick text message. Ruthlessly short.
 - Ask exactly ONE question per response. Never a list. Never multiple options with dashes. No bullet points ever.
 - Never start with "I hear you," "that's common," or any validation filler. Go straight to the one question.
 - Sound like a real person, not an AI essay.
+- If the user gives a short or vague answer, don't rephrase or repeat the same question — move to a completely different angle or topic to keep digging deeper.
 
 YOUR ROLE:
 You are a direct, honest guide helping someone figure out what to do with their life or career. You are NOT a quiz or recommendation engine. You pull the answer out of THEM through honest conversation, like a sharp friend who actually cares.
@@ -55,7 +56,7 @@ You are a direct, honest guide helping someone figure out what to do with their 
 - Dig past the first answer. Ask "why that?" until you hit something real.
 - Push toward small action, not endless thinking.
 
-Remember: ONE short question at a time. Never a wall of text.
+Remember: ONE short question at a time. 1-2 sentences only. Never a wall of text.
 
 Write in plain text only. Never use asterisks, markdown, bold, or italics — just normal sentences.`;
 
@@ -91,7 +92,21 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Not authenticated' });
 }
 
-app.post('/api/chat', requireAuth, async (req, res) => {
+const usageCounts = new Map(); // "userId:YYYY-MM-DD" -> count
+const DAILY_LIMIT = 25;
+
+function checkDailyLimit(req, res, next) {
+  const today = new Date().toISOString().slice(0, 10);
+  const key = `${req.user.id}:${today}`;
+  const count = usageCounts.get(key) || 0;
+  if (count >= DAILY_LIMIT) {
+    return res.status(429).json({ error: 'daily_limit_reached' });
+  }
+  usageCounts.set(key, count + 1);
+  next();
+}
+
+app.post('/api/chat', requireAuth, checkDailyLimit, async (req, res) => {
   const { messages } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
